@@ -4,14 +4,12 @@ import threading
 import base64
 from datetime import datetime
 from queue import Queue, Empty
-
-import mss
-from PIL import Image
-import pyttsx3
-from openai import OpenAI
+from typing import List, Optional, Tuple
 
 import tkinter as tk
 from tkinter import scrolledtext
+
+from dependency_utils import resolve_dependencies, format_dependency_list
 
 # =========================
 #  KONFIGURATION
@@ -23,14 +21,78 @@ CAPTURE_INTERVAL = 120
 # Logfile für Text
 LOG_FILE = "activity_log.txt"
 
-# OpenAI Client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Abhängigkeitsprüfung
+REQUIRED_DEPENDENCIES: List[Tuple[str, str]] = [
+    ("mss", "mss"),
+    ("PIL.Image", "Pillow"),
+    ("openai", "openai>=1.0.0"),
+]
+
+OPTIONAL_DEPENDENCIES: List[Tuple[str, str]] = [
+    ("pyttsx3", "pyttsx3"),
+]
+
+_MODULES, MISSING_REQUIRED, MISSING_OPTIONAL = resolve_dependencies(
+    REQUIRED_DEPENDENCIES,
+    OPTIONAL_DEPENDENCIES,
+)
+
+mss = _MODULES.get("mss")
+Image = _MODULES.get("PIL.Image")
+_openai_module = _MODULES.get("openai")
+
+if _openai_module and hasattr(_openai_module, "OpenAI"):
+    OpenAI = _openai_module.OpenAI
+else:
+    OpenAI = None
+    if _openai_module is not None:
+        MISSING_REQUIRED.append(("openai.OpenAI", "openai>=1.0.0"))
+
+pyttsx3 = _MODULES.get("pyttsx3")
+
+client: Optional[object] = None
+
+
+def ensure_dependencies() -> bool:
+    """Prüft, ob alle Pflicht-Abhängigkeiten vorhanden sind."""
+    if MISSING_REQUIRED:
+        print("Fehlende Python-Pakete: " + format_dependency_list(MISSING_REQUIRED))
+        pip_args = " ".join(dict.fromkeys(pip for _, pip in MISSING_REQUIRED))
+        print("Bitte installiere sie mit: pip install " + pip_args)
+        return False
+
+    if MISSING_OPTIONAL:
+        print("Hinweis: optionale Pakete fehlen → " +
+              format_dependency_list(MISSING_OPTIONAL))
+        print("Die Anwendung läuft trotzdem, aber bestimmte Komfort-Funktionen sind deaktiviert.")
+
+    return True
+
+
+def get_client():
+    """Erstellt bei Bedarf den OpenAI-Client."""
+    global client
+    if client is not None:
+        return client
+
+    if OpenAI is None:
+        raise RuntimeError("OpenAI SDK ist nicht verfügbar.")
+
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY ist nicht gesetzt.")
+
+    client = OpenAI(api_key=api_key)
+    return client
 
 # =========================
 #  SCREENSHOT & KI-ANALYSE
 # =========================
 
 def take_screenshot(filename="screen.png"):
+    if mss is None or Image is None:
+        raise RuntimeError("Screenshot-Funktion erfordert die Pakete mss und Pillow.")
+
     with mss.mss() as sct:
         monitor = sct.monitors[1]  # Hauptmonitor
         sct_img = sct.grab(monitor)
@@ -45,7 +107,8 @@ def describe_screenshot(image_path):
         image_b64 = base64.b64encode(image_bytes).decode("utf-8")
 
     try:
-        response = client.responses.create(
+        client_instance = get_client()
+        response = client_instance.responses.create(
             model="gpt-4.1-mini",
             input=[
                 {
@@ -119,20 +182,30 @@ def detect_triggers(description: str):
 
 class Speaker:
     def __init__(self):
-        self.engine = pyttsx3.init()
-        # Stimme etwas anpassen
-        voices = self.engine.getProperty("voices")
-        if voices:
-            # Nimm die erste verfügbare Stimme
-            self.engine.setProperty("voice", voices[0].id)
-        self.engine.setProperty("rate", 190)  # Sprechgeschwindigkeit
-        self.engine.setProperty("volume", 0.9)
+        self.available = pyttsx3 is not None
 
-        self.queue = Queue()
-        self.thread = threading.Thread(target=self._run, daemon=True)
-        self.thread.start()
+        if self.available:
+            self.engine = pyttsx3.init()
+            # Stimme etwas anpassen
+            voices = self.engine.getProperty("voices")
+            if voices:
+                # Nimm die erste verfügbare Stimme
+                self.engine.setProperty("voice", voices[0].id)
+            self.engine.setProperty("rate", 190)  # Sprechgeschwindigkeit
+            self.engine.setProperty("volume", 0.9)
+
+            self.queue = Queue()
+            self.thread = threading.Thread(target=self._run, daemon=True)
+            self.thread.start()
+        else:
+            self.engine = None
+            self.queue = None
+            self.thread = None
 
     def _run(self):
+        if not self.available or self.queue is None:
+            return
+
         while True:
             try:
                 text = self.queue.get(timeout=0.1)
@@ -148,6 +221,8 @@ class Speaker:
     def say(self, text: str):
         # Nur kurze Hinweise sprechen, nicht ganze Romane
         if not text:
+            return
+        if not self.available or self.queue is None:
             return
         self.queue.put(text)
 
@@ -300,7 +375,8 @@ class OverlayApp:
 def create_summary(log_text: str) -> str:
     """Fragt die KI nach einer kompakten Tageszusammenfassung."""
     try:
-        response = client.responses.create(
+        client_instance = get_client()
+        response = client_instance.responses.create(
             model="gpt-4.1-mini",
             input=[
                 {
@@ -369,10 +445,14 @@ def worker_loop(app: OverlayApp):
 # =========================
 
 def main():
+    if not ensure_dependencies():
+        return
+
     # Kleiner Check für API-Key
     if not os.getenv("OPENAI_API_KEY"):
         print("OPENAI_API_KEY ist nicht gesetzt. Bitte zuerst setzen:")
         print('$env:OPENAI_API_KEY="DEIN_KEY_HIER"  (PowerShell)')
+        print('export OPENAI_API_KEY="DEIN_KEY_HIER"  (Linux/macOS)')
         return
 
     speaker = Speaker()
