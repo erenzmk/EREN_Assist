@@ -1,0 +1,7 @@
+# Pflichtpakete
+mss
+Pillow
+openai>=1.0.0
+
+# Optionale Komfortpakete
+pyttsx3
