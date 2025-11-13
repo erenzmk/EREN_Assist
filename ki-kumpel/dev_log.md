@@ -6,6 +6,7 @@
 - `assistant.py` so umgebaut, dass fehlende Pakete oder ein nicht gesetzter `OPENAI_API_KEY` früh erkannt und verständlich gemeldet werden. Text-to-Speech ist nun optional.
 - `screen_logger.py` erhält dieselben Prüfungen und bricht kontrolliert ab, wenn Voraussetzungen fehlen.
 - `assistant_core.py` initialisiert nun den gleichen Einstiegspunkt wie `assistant.py`, damit die PyInstaller-Builds funktionieren.
+<<<<<< codex/untersuche-probleme-und-erstelle-patches-80oibw
 
 ## 2025-11-13
 - `python assistant.py` gestartet, um den aktuellen Einstiegspunkt zu testen. Das Skript bricht kontrolliert ab und fordert die Installation der Pakete `mss`, `Pillow` und `openai>=1.0.0` ein.
@@ -16,3 +17,5 @@
 - `requirements.txt` ergänzt, um Installation aller Pflichtpakete mit `pip install -r requirements.txt` zu vereinfachen.
 - Schritt-für-Schritt-Anleitung `docs/windows_setup.md` angelegt (PowerShell-Workflow, häufige Fehler, nächste Schritte).
 - Konsolenhinweise in `assistant.py` erweitert: bei fehlenden Paketen jetzt expliziter Verweis auf `pip install -r requirements.txt` inkl. PowerShell-Kommando.
+=======
+>>>>>> main

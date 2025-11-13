@@ -59,8 +59,11 @@ def ensure_dependencies() -> bool:
         print("Fehlende Python-Pakete: " + format_dependency_list(MISSING_REQUIRED))
         pip_args = " ".join(dict.fromkeys(pip for _, pip in MISSING_REQUIRED))
         print("Bitte installiere sie mit: pip install " + pip_args)
+<<<<<< codex/untersuche-probleme-und-erstelle-patches-80oibw
         print("Alternativ kannst du auch alle Pakete über 'pip install -r requirements.txt' installieren.")
         print("(PowerShell) .\\.venv\\Scripts\\Activate.ps1  ->  pip install -r requirements.txt")
+=======
+>>>>>> main
         return False
 
     if MISSING_OPTIONAL:
