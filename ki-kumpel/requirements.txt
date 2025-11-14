@@ -1,7 +1,10 @@
-# Pflichtpakete
+pystray
+pillow
 mss
-Pillow
-openai>=1.0.0
-
-# Optionale Komfortpakete
+openai
+tk
+pyinstaller
+pywin32
 pyttsx3
+distro
+httpx
