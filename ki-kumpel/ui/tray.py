@@ -1,9 +1,9 @@
 """System-Tray-Integration für den KI-Kumpel."""
 from __future__ import annotations
 
-import os
 import sys
 import threading
+from pathlib import Path
 
 import pystray
 from PIL import Image
@@ -11,6 +11,7 @@ from pystray import MenuItem as item
 import tkinter as tk
 from tkinter import messagebox, simpledialog
 
+from core.config import BASE_DIR
 from core.logger import get_logger
 from core.router import AssistantRouter
 from core.screen_capture import capture_all_screens
@@ -19,9 +20,11 @@ _logger = get_logger(__name__)
 
 
 def _resource_path(relative: str) -> str:
-    if hasattr(sys, "_MEIPASS"):
-        return os.path.join(sys._MEIPASS, relative)
-    return os.path.join(os.path.abspath("."), relative)
+    base = Path(getattr(sys, "_MEIPASS", BASE_DIR))
+    candidate = base / relative
+    if not candidate.exists():
+        candidate = Path.cwd() / relative
+    return str(candidate)
 
 
 def _ask_text(router: AssistantRouter) -> None:
