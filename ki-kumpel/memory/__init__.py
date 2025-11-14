@@ -1,0 +1,1 @@
+"""Gedächtnis- und Wissensmodule."""

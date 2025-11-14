@@ -1,0 +1,1 @@
+"""Desktop- und Tray-Oberflächen."""
