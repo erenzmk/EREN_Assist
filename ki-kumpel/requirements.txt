@@ -1,0 +1,10 @@
+pystray
+pillow
+mss
+openai
+tk
+pyinstaller
+pywin32
+pyttsx3
+distro
+httpx
