@@ -7,3 +7,4 @@
 - Tray, CLI und Overlay auf neue Architektur umgestellt.
 - Dokumentation (`ARCHITECTURE.md`, `MEMORY.md`) ergänzt.
 - SQLite-Speicher thread-sicher gemacht und Einstiegsskripte passen den Modulpfad automatisch an.
+- Gemeinsames Bootstrap-Modul ergänzt, das zuverlässig die Projektwurzel findet (auch für Windows/Exe) und Importfehler wie `No module named 'ui'` verhindert.

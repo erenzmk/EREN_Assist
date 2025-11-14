@@ -33,7 +33,7 @@ tests/            # Platzhalter für zukünftige Tests
 - **ui.tray**: System-Tray-Integration auf Basis der neuen Kernlogik.
 - **ui.overlay**: Leichtgewichtige Overlay-Anzeige.
 
-- **src/**: Stellt die bisherigen Einstiegspunkte (`ki_kumpel_app.py`, `assistant_core.py`, `assistant_tray.py`, `assistant_overlay.py`) bereit und leitet intern auf die neue Struktur um. Damit bleiben Build-Skripte und EXE-Konfigurationen kompatibel.
+- **src/**: Stellt die bisherigen Einstiegspunkte (`ki_kumpel_app.py`, `assistant_core.py`, `assistant_tray.py`, `assistant_overlay.py`) bereit und leitet intern auf die neue Struktur um. Damit bleiben Build-Skripte und EXE-Konfigurationen kompatibel. Das Hilfsmodul `bootstrap.ensure_project_root()` sorgt dabei dafür, dass die Projektwurzel zuverlässig auf den `sys.path` gelegt wird (auch unter Windows-Startskripten oder PyInstaller).
 
 ## Laufzeitfluss
 1. UI oder Tray erstellt einen `AssistantRouter`.
