@@ -1,53 +1,28 @@
-import base64
-import io
-import mss
-from PIL import Image
-from openai import OpenAI
+"""CLI-Einstiegspunkt für schnelle Vision-Abfragen."""
+from __future__ import annotations
 
-client = OpenAI()
+import sys
+from pathlib import Path
 
-def capture_screen():
-    """Nimmt einen Screenshot mit mss und gibt ein PIL Image zurück."""
-    with mss.mss() as sct:
-        monitor = sct.monitors[1]  # Hauptmonitor
-        sct_img = sct.grab(monitor)
-        img = Image.frombytes("RGB", sct_img.size, sct_img.rgb)
-        return img
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
-def image_to_base64(img: Image.Image) -> str:
-    """Konvertiert PIL Image → Base64-String."""
-    buffer = io.BytesIO()
-    img.save(buffer, format="PNG")
-    return base64.b64encode(buffer.getvalue()).decode()
+from core.screen_capture import capture_all_screens
+from core.router import AssistantRouter
 
-def run_assistant():
-    """Screenshot aufnehmen → KI schicken → Antwort zurückgeben."""
-    print("📸 Screenshot wird aufgenommen...")
-    img = capture_screen()
-    b64_image = image_to_base64(img)
 
-    print("🤖 KI wird abgefragt...")
-
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {"type": "input_text", "text": "Beschreibe den Screenshot."},
-                    {
-                        "type": "input_image",
-                        "image_url": f"data:image/png;base64,{b64_image}"
-                    }
-                ]
-            }
-        ]
-    )
-
-    output = response.choices[0].message["content"][0]["text"]
+def run_assistant() -> None:
+    router = AssistantRouter()
+    shots = capture_all_screens()
+    if not shots:
+        raise RuntimeError("Kein Monitor gefunden")
+    _, image = shots[0]
+    answer = router.handle_vision("Beschreibe den Screenshot.", image)
     print("\n===== KI ANTWORT =====\n")
-    print(output)
-    print("\n=======================\n")
+    print(answer)
+    print("\n======================\n")
 
-if __name__ == "__main__":
+
+if __name__ == "__main__":  # pragma: no cover - CLI Einstieg
     run_assistant()

@@ -1,23 +1,19 @@
-import threading
-import tkinter as tk
+"""Kompatibilitäts-Overlay."""
+from __future__ import annotations
 
-class OverlayWindow:
-    def __init__(self):
-        self.root = tk.Tk()
-        self.root.geometry("450x300+50+50")
-        self.root.title("KI-Kumpel Overlay")
-        self.root.configure(bg="#1e1e1e")
+import sys
+from pathlib import Path
 
-        self.text = tk.Text(self.root, bg="#1e1e1e", fg="white", wrap="word")
-        self.text.pack(expand=True, fill="both")
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
-        threading.Thread(target=self._run, daemon=True).start()
+from ui.overlay import OverlayWindow
 
-    def _run(self):
-        self.root.mainloop()
 
-    def show(self, message):
-        self.text.delete(1.0, tk.END)
-        self.text.insert(tk.END, message)
-        self.root.lift()
-        self.root.focus_force()
+def main() -> None:
+    OverlayWindow()
+
+
+if __name__ == "__main__":  # pragma: no cover
+    main()
